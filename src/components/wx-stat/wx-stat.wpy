@@ -1,0 +1,208 @@
+<style>
+.wx-stat-banner{
+  text-align: center;
+}
+</style>
+<template>
+<view class="wx-stat-banner">
+  <navigator
+    wx:if="{{hasBid}}"
+    target="miniProgram"
+    open-type="navigate"
+    app-id="{{adxData.appid}}"
+    path="{{adxData.clkurl302}}"
+    bindsuccess="mpOpend"
+    bindfail="mpOpenFail"
+    version="release"
+  >
+    <image src="{{adxData.iurl}}" mode="widthFix"></image>
+  </navigator>
+</view>
+</template>
+
+<script>
+import wepy from 'wepy';
+import { api, utils} from './main';
+
+export default class WxStat extends wepy.component {
+  props = {
+    type: {
+      type: String,
+      default: 'user' // 'adx'
+    },
+    name: {
+      // 需验证必填
+      type: String,
+      required: true
+    },
+    tagId: {
+      type: String,
+      required: true
+    },
+    uid: {
+      type: String,
+      default: ''
+    },
+    aid: {
+      type: String,
+      default: ''
+    },
+    rid: {
+      type: String,
+      default: ''
+    },
+    imptrace: {
+      type: String,
+      default: ''
+    },
+    clktrace: {
+      type: String,
+      default: ''
+    }
+  };
+
+  data = {
+    hasBid: false,
+    adxData: {}
+  };
+
+  onLoad() {
+    this.setup();
+    if (!this.name) {
+      wx.showModal({
+        title: "提示",
+        content: "wx-stat组件必填项name未填写",
+        confirmText: "确定",
+        showCancel: false
+      });
+      return;
+    }
+    if (!this.tagId) {
+      wx.showModal({
+        title: "提示",
+        content: "wx-stat组件必填项tag-id未填写",
+        confirmText: "确定",
+        showCancel: false
+      });
+      return;
+    }
+
+    const urlReg = /https:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/
+    if(this.imptrace && !urlReg.test(this.imptrace)){
+      wx.showModal({
+        title: "提示",
+        content: "wx-stat组件必填项imptrace不是一个合法的https链接",
+        confirmText: "确定",
+        showCancel: false
+      });
+    }
+    if(this.clktrace && !urlReg.test(this.clktrace)){
+      wx.showModal({
+        title: "提示",
+        content: "wx-stat组件必填项clktrace不是一个合法的https链接",
+        confirmText: "确定",
+        showCancel: false
+      });
+    }
+
+    const params = {
+      device: this.deviceInfo,
+      site: this.siteInfo,
+      user: this.user,
+      imp: this.imp,
+      ts: +new Date(),
+      aid: this.aid,
+      rid: this.rid
+    };
+
+    api.getAdxInfo(params).then(res => {
+      const hasData = res.data.seatbid && res.data.seatbid.length > 0;
+      let data;
+      if(hasData){
+        data = res.data.seatbid[0].bid[0];
+        this.hasBid = data.action_type === 8;
+      }else{
+        wx.showModal({
+          title: "提示",
+          content: "获取广告信息失败，请确保参数填写正确",
+          confirmText: "确定",
+          showCancel: false
+        });
+      }
+
+      if(this.hasBid){
+        this.adxData = data;
+
+        // 展示时发送统计请求
+        this.adxData.imptrackers.forEach(url => {
+          api.sendStatInfo(url);
+        });
+
+        this.imptrace && api.sendStatInfo(this.imptrace);
+      }
+
+      this.$apply()
+
+    });
+  }
+
+  methods = {
+    mpOpend() {
+      // 点击时发送统计请求
+      this.adxData.clktrackers.forEach(url => {
+        api.sendStatInfo(url);
+      });
+
+      this.clktrace && api.sendStatInfo(this.clktrace);
+    },
+    mpOpenFail(res){
+      console.log('小程序跳转失败：',res);
+    }
+  };
+
+  //正确：普通自定义方法在methods对象外声明，与methods平级
+
+  setup() {
+    const res = wx.getSystemInfoSync();
+    this.deviceInfo = {
+      ua: '', // 无法获取
+      ip: '', // 无法获取
+      language: '', // 无法获取
+      model: res.model,
+      os: res.system,
+      devicetype: 4
+    };
+
+    this.siteInfo = {
+      name: this.name,
+      page: utils.getCurrentPageUrlWithArgs()
+    };
+    this.user = this.getUser();
+    this.imp = this.setImp();
+  }
+
+  getUser() {
+    const uid = this.uid || wx.getStorageSync('uid') || utils.getGuid();
+    wx.setStorageSync('uid', uid);
+
+    return {
+      id: uid
+    };
+  }
+
+  setImp() {
+    return [
+      {
+        id: '', // 暂时不用
+        tagid: this.tagId
+        // banner: { // 先不填
+        //   w: 100,
+        //   h: 100,
+        //   pos: 0 // 0:未知 4:头部 5:底部 6:侧边栏 7:全屏
+        // }
+      }
+    ];
+  }
+  
+}
+</script>

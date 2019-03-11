@@ -1,0 +1,36 @@
+<style lang="less">
+</style>
+<template>
+  <div>
+  <p>{{motto}}</p>
+  <wxstat :name="name" :tagId="tagId"></wxstat>
+  </div>
+</template>
+
+<script>
+import wepy from 'wepy';
+import WxStat from '../components/wx-stat/wx-stat';
+
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: 'test'
+  };
+
+  components = {
+    wxstat: WxStat
+  };
+
+  //可用于页面模板绑定的数据
+  data = {
+    motto: 'Hello World',
+    name: '小程序名称',
+    tagId: '300350'
+  };
+
+  //事件处理函数(集中保存在methods对象中)
+  methods = {
+    
+  };
+
+}
+</script>
