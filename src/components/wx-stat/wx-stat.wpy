@@ -2,11 +2,14 @@
 .wx-stat-banner{
   text-align: center;
 }
+.wx-stat__ad{
+  margin: 0 auto;
+}
 </style>
 <template>
 <view class="wx-stat-banner">
   <navigator
-    wx:if="{{hasBid}}"
+    wx:if="{{adType === 'mp'}}"
     target="miniProgram"
     open-type="navigate"
     app-id="{{adxData.appid}}"
@@ -17,6 +20,10 @@
   >
     <image src="{{adxData.iurl}}" mode="widthFix"></image>
   </navigator>
+  <view wx:if="{{adType === 'h5'}}" bindtap="gotoAdSite">
+    <image class="wx-stat__ad" src="{{adxData.iurl}}" mode="widthFix" ></image>
+  </view>
+  <web-view wx:if="{{showSite===true}}" src="{{adxData.clkurl302}}" />
 </view>
 </template>
 
@@ -62,8 +69,9 @@ export default class WxStat extends wepy.component {
   };
 
   data = {
-    hasBid: false,
-    adxData: {}
+    adType: 'mp',
+    adxData: {},
+    showSite: false
   };
 
   onLoad() {
@@ -120,7 +128,8 @@ export default class WxStat extends wepy.component {
       let data;
       if(hasData){
         data = res.data.seatbid[0].bid[0];
-        this.hasBid = data.action_type === 8;
+        // 1: 打开页面链接  8: 打开小程序
+        this.adType = data.action_type === 8 ? 'mp' : data.action_type === 1 ? 'h5' : 'other'
       }else{
         wx.showModal({
           title: "提示",
@@ -130,7 +139,7 @@ export default class WxStat extends wepy.component {
         });
       }
 
-      if(this.hasBid){
+      if(['mp', 'h5'].indexOf(this.adType) > -1){
         this.adxData = data;
 
         // 展示时发送统计请求
@@ -157,6 +166,9 @@ export default class WxStat extends wepy.component {
     },
     mpOpenFail(res){
       console.log('小程序跳转失败：',res);
+    },
+     gotoAdSite() {
+      this.showSite = true;
     }
   };
 
