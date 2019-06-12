@@ -137,6 +137,7 @@ export default class WxStat extends wepy.component {
           confirmText: "确定",
           showCancel: false
         });
+        return false;
       }
 
       if(['mp', 'h5'].indexOf(this.adType) > -1){

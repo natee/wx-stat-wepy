@@ -1,6 +1,6 @@
 {
   "name": "wx-stat-wepy",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "wx-stat-wepy用于微信小程序跳转到其它小程序时给指定用户发送统计代码",
   "main": "src/components/wx-stat/wx-stat",
   "scripts": {
